@@ -2067,5 +2067,227 @@ class Solution:
             
 ```
 
-好吧，研究了一下上面的错误，就是每次选择右侧的时候粗心了，应该是选择右侧，不能包括当前的元素a 呵呵
+好吧，研究了一下上面的错误，就是每次选择右侧的时候粗心了，应该是选择右侧，不能包括当前的元素a 呵呵。所以最后一个循环里面，当前inex=i的时候，我们需要在[i+1, len(nums) -1] 里面寻找2sum
 
+好吧，看了令狐冲的视频，教训就是去重复的时候要尽量避免，而不能使用set，这样不符合要求，好吧 再做一遍。最坏情况，当输入数组为[-1, -1, -1, -1, -1, -1, 0, 1]的时候，用令狐冲的方法可以每一次直接跳过后面的-1,但是使用set的方法，我们必须check每一个-1,这样太慢了
+
+```
+class Solution:
+    def threeSum(self, nums: List[int]) -> List[List[int]]:
+        def twoSum(nums, start, end, target, res):
+            # here, res is a list of tuples without duplicates
+            # assert len(nums) >= 2
+            if start >= end:
+                # less than 2 elems
+                return
+            
+            # There are at least 2 elems in nums
+            last_pair = None
+            left, right = start, end
+            while left < right:
+                curr_sum = nums[left] + nums[right]
+                
+                if curr_sum == target:
+                    if (nums[left], nums[right]) != last_pair:
+                        res.append((-target, nums[left], nums[right]))
+                    last_pair = (nums[left], nums[right])
+                    left += 1
+                    right -= 1
+                elif curr_sum < target:
+                    left += 1
+                else:
+                    right -= 1
+            
+            return
+        
+        if not nums or len(nums) < 3:
+            return []
+        
+        res = []
+        nums.sort()
+        
+        for i in range(len(nums) - 2):
+            if i > 0 and nums[i] == nums[i-1]:
+                continue
+                
+            twoSum(nums, i + 1, len(nums) - 1, -nums[i], res)
+        
+        return res
+```
+
+果然比之前快很多啊 ，赞！
+
+
+### 611. Valid Triangle Number
+首先，注意，函数名不能用数字开头，我开始用2sum，结果错了
+
+```
+class Solution:
+    def triangleNumber(self, nums: List[int]) -> int:
+        if not nums or len(nums) < 3:
+            return 0
+        
+        def twoSum(nums, start, end, target, res):
+            if start >= end:
+                return
+            
+            left, right = start, end
+            while left < right:
+                curr_sum = nums[left] + nums[right]
+                
+                if curr_sum <= target:
+                    left += 1
+                else:
+                    res.append((nums[left], nums[right], target))
+                    right -= 1
+        
+        res = []
+        for i in range(2, len(nums)):
+            twoSum(nums, 0, i - 1, nums[i], res)
+        
+        return len(res)
+```
+上面这个居然错了，看看为啥
+
+```
+Wrong Answer
+Runtime: 48 ms
+Your input
+[2,2,3,4]
+stdout
+
+Output
+2
+Expected
+3
+```
+
+好吧，直观感觉上，有问题，应该有三个 223, 224, 234
+
+按照我的直觉修改了一下，感觉有点ugly，而且居然错了。。。
+
+```
+class Solution:
+    def triangleNumber(self, nums: List[int]) -> int:
+        if not nums or len(nums) < 3:
+            return 0
+        
+        def twoSum(nums, start, end, target, res):
+            if start >= end:
+                return
+            
+            left, right = start, end
+            while left < right:
+                curr_sum = nums[left] + nums[right]
+                
+                if curr_sum <= target:
+                    left += 1
+                else:
+                    res.append((nums[left], nums[right], target))
+                    
+                    if left + 1 < right and nums[left + 1] + nums[right] == target:
+                        res.append((nums[left + 1], nums[right], target))
+                        
+                    if left < right - 1 and nums[left] + nums[right - 1] == target:
+                        res.append((nums[left], nums[right - 1], target))
+                    
+                    left += 1
+                    right -= 1
+        
+        res = []
+        for i in range(2, len(nums)):
+            twoSum(nums, 0, i - 1, nums[i], res)
+        
+        return len(res)
+```
+
+```
+Wrong Answer
+Details 
+Input
+[0,1,0]
+Output
+1
+Expected
+0
+```
+
+好吧，直观感觉是忘记了sort这一步。加上再试试看
+
+```
+class Solution:
+    def triangleNumber(self, nums: List[int]) -> int:
+        if not nums or len(nums) < 3:
+            return 0
+        
+        def twoSum(nums, start, end, target, res):
+            if start >= end:
+                return
+            
+            left, right = start, end
+            while left < right:
+                curr_sum = nums[left] + nums[right]
+                
+                if curr_sum <= target:
+                    left += 1
+                else:
+                    res.append((nums[left], nums[right], target))
+                    
+                    if left + 1 < right and nums[left + 1] + nums[right] == target:
+                        res.append((nums[left + 1], nums[right], target))
+                        
+                    if left < right - 1 and nums[left] + nums[right - 1] == target:
+                        res.append((nums[left], nums[right - 1], target))
+                    
+                    left += 1
+                    right -= 1
+        
+        nums.sort()
+        res = []
+        for i in range(2, len(nums)):
+            twoSum(nums, 0, i - 1, nums[i], res)
+        
+        return len(res)
+```
+
+还是错误
+```
+Wrong Answer
+Details 
+Input
+[1,2,3,4,5,6]
+Output
+6
+Expected
+7
+```
+好吧，看了令狐冲的讲解，有道理，这里只要求个数，不要求具体方案，所以可以更加简单一点 呵呵
+
+```
+class Solution:
+    def triangleNumber(self, nums: List[int]) -> int:
+        if not nums or len(nums) < 3:
+            return 0
+        
+        nums.sort()
+        
+        ans = 0
+        for i in range(2, len(nums)):
+            left, right = 0, i - 1
+            
+            while left < right:
+                curr_sum = nums[left] + nums[right]
+                
+                if curr_sum <= nums[i]:
+                    left += 1
+                else:
+                    # here, we know that nums[left] + nums[right] > nums[i]
+                    # automatically, nums[left + 1] + nums[right] > nums[i]
+                    # and so on
+                    ans += right - left
+                    right -= 1
+        
+        return ans
+```
+这个是看了令狐冲答案直接抄的。注意 呵呵。
+显然，如果需要列出每一个答案，那么应该是O(n^3)。但是这里只需要个数，所以可以降低到O(n^2)
